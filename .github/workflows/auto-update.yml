@@ -117,18 +117,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Check if branch exists or create a new one
+      - name: Check if branch exist or create a new one
         run: |
-          echo "Fetching all branches"
           git fetch --all
-          BRANCH_NAME="auto-update-version-${{ github.event.client_payload.release_tag }}"
-          if git show-ref --verify --quiet refs/heads/$BRANCH_NAME; then
-            echo "Branch $BRANCH_NAME already exists"
-            git checkout $BRANCH_NAME
-          else
-            echo "Creating new branch $BRANCH_NAME"
-            git checkout -b $BRANCH_NAME
-          fi
+          git checkout -b auto-update-version-${{ github.event.client_payload.release_tag }} || git checkout auto-update-version-${{ github.event.client_payload.release_tag }}
 
       - name: Get GenCLE and update code
         id: update-code
