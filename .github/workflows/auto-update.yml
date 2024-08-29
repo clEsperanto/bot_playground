@@ -165,8 +165,8 @@ jobs:
             }
             else {
               console.log(`Branch already exists: ${branchName}`);
-              # print the list of branches using git
-              console.log(`git branch`);
+              const branches = execSync('git branch').toString();
+              console.log(branches);
             }
             
       - name: Get GenCLE and update code
