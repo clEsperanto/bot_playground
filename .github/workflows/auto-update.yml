@@ -125,7 +125,11 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update dependencies"
-            git pull --rebase origin update-dependencies-${{ github.event.client_payload.release_tag }}
+            if ! git pull --rebase origin update-dependencies-${{ github.event.client_payload.release_tag }}; then
+              git rebase --abort
+              echo "Rebase conflict occurred. Aborting rebase."
+              exit 1
+            fi
             git push https://$GH_TOKEN@github.com/${{ github.repository }}.git update-dependencies-${{ github.event.client_payload.release_tag }}
           fi
           
