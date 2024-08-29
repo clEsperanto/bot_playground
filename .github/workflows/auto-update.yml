@@ -165,6 +165,8 @@ jobs:
             }
             else {
               console.log(`Branch already exists: ${branchName}`);
+              # print the list of branches
+              console.log(branches);
             }
             
       - name: Get GenCLE and update code
