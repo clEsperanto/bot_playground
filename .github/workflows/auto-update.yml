@@ -14,6 +14,13 @@ jobs:
         run: |
           echo "Received release tag: ${{ github.event.client_payload.release_tag }} from CLIc"
 
+      - name: Access release_tag
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const releaseTag = context.payload.client_payload?.release_tag;
+            console.log(`Release Tag: ${releaseTag}`);
+
       - name: Check if issues already exists
         id: check-issues
         uses: actions/github-script@v6
@@ -21,21 +28,28 @@ jobs:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
             (async () => {
-              console.log("Checking if issue already exists for release tag: " + github.context.payload.client_payload.release_tag);
+              const releaseTag = github.context.payload.client_payload?.release_tag;
+              if (!releaseTag) {
+                console.log("No release tag found in client payload.");
+                core.setOutput('issue_number', '');
+                return;
+              }
+
+              console.log("Checking if issue already exists for release tag: " + releaseTag);
               const { data: issues } = await github.issues.listForRepo({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
                 labels: 'auto-update',
                 state: 'all'
               });
-        
-              const issue = issues.find(issue => issue.title === `Auto-Update to version ${github.context.payload.client_payload.release_tag}`);
-        
+
+              const issue = issues.find(issue => issue.title === `Auto-Update to version ${releaseTag}`);
+
               if (issue) {
                 console.log("Issue already exists with number: " + issue.number);
                 core.setOutput('issue_number', issue.number);
               } else {
-                console.log("No existing issue found for release tag: " + github.context.payload.client_payload.release_tag);
+                console.log("No existing issue found for release tag: " + releaseTag);
                 core.setOutput('issue_number', '');
               }
             })();
