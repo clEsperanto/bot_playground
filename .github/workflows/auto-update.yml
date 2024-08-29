@@ -19,25 +19,27 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
-          script: |    
-            octokit = github.getOctokit(process.env.RELEASE_PAT);
-            console.log("Checking if issue already exists for release tag: " + context.payload.client_payload.release_tag);
-            const { data: issues } = await octokit.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'auto-update',
-              state: 'all'
-            });
-      
-            const issue = issues.find(issue => issue.title === `Auto-Update to version ${context.payload.client_payload.release_tag}`);
-      
-            if (issue) {
-              console.log("Issue already exists with number: " + issue.number);
-              core.setOutput('issue_number', issue.number);
-            } else {
-              console.log("No existing issue found for release tag: " + context.payload.client_payload.release_tag);
-              core.setOutput('issue_number', '');
-            }
+          script: |
+            const octokit = github.getOctokit(core.getInput('github-token'));     
+            (async () => {
+              console.log("Checking if issue already exists for release tag: " + github.context.payload.client_payload.release_tag);
+              const { data: issues } = await octokit.issues.listForRepo({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                labels: 'auto-update',
+                state: 'all'
+              });
+        
+              const issue = issues.find(issue => issue.title === `Auto-Update to version ${github.context.payload.client_payload.release_tag}`);
+        
+              if (issue) {
+                console.log("Issue already exists with number: " + issue.number);
+                core.setOutput('issue_number', issue.number);
+              } else {
+                console.log("No existing issue found for release tag: " + github.context.payload.client_payload.release_tag);
+                core.setOutput('issue_number', '');
+              }
+            })();
 
       - name: Create issue
         id: create-issue
@@ -45,65 +47,69 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
-          script: |     
-            console.log("Creating new issue for release tag: " + context.payload.client_payload.release_tag);
-            const { data: issue } = await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `Auto-Update to version ${context.payload.client_payload.release_tag}`,
-              body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
-      
-              ### Release Information
-              - **Release Tag:** ${context.payload.client_payload.release_tag}
-              - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
-      
-              Please review the changes and update the dependencies accordingly.`,
-              labels: ['auto-update']
-            });
-      
-            console.log("Created issue with number: " + issue.number);
-            core.setOutput('issue_number', issue.number);
+          script: |
+            (async () => {
+              console.log("Creating new issue for release tag: " + github.context.payload.client_payload.release_tag);
+              const { data: issue } = await github.rest.issues.create({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                title: `Auto-Update to version ${github.context.payload.client_payload.release_tag}`,
+                body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
+        
+                ### Release Information
+                - **Release Tag:** ${github.context.payload.client_payload.release_tag}
+                - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${github.context.payload.client_payload.release_tag})
+        
+                Please review the changes and update the dependencies accordingly.`,
+                labels: ['auto-update']
+              });
+        
+              console.log("Created issue with number: " + issue.number);
+              core.setOutput('issue_number', issue.number);
+            })();
 
-      - name: Add message
-        id: add-message
+      - name: Reopen issue
+        id: reopen-issue
         if: steps.check-issues.outputs.issue_number != ''
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
-            const issue_number = steps.check-issues.outputs.issue_number;
-            console.log("Adding message to existing issue with number: " + issue_number);
-            const { data: issue } = await github.issues.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue_number
-            });
-      
-            if (issue.state === 'closed') {
-              console.log("Reopening closed issue with number: " + issue_number);
-              await github.issues.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue_number,
-                state: 'open'
+            (async () => {
+              const issue_number = steps.check-issues.outputs.issue_number;
+              console.log("Adding message to existing issue with number: " + issue_number);
+              const { data: issue } = await github.rest.issues.get({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                issue_number: issue_number
               });
-      
-              console.log("Adding comment to reopened issue with number: " + issue_number);
-              await github.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issue_number,
-                body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
-      
-                ### Release Information
-                - **Release Tag:** ${context.payload.client_payload.release_tag}
-                - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
-      
-                Please review the changes and update the dependencies accordingly.`
-              });
-            }
-      
-            core.setOutput('issue_number', issue_number);
+        
+              if (issue.state === 'closed') {
+                console.log("Reopening closed issue with number: " + issue_number);
+                await github.rest.issues.update({
+                  owner: github.context.repo.owner,
+                  repo: github.context.repo.repo,
+                  issue_number: issue_number,
+                  state: 'open'
+                });
+        
+                console.log("Adding comment to reopened issue with number: " + issue_number);
+                await github.rest.issues.createComment({
+                  owner: github.context.repo.owner,
+                  repo: github.context.repo.repo,
+                  issue_number: issue_number,
+                  body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
+        
+                  ### Release Information
+                  - **Release Tag:** ${github.context.payload.client_payload.release_tag}
+                  - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${github.context.payload.client_payload.release_tag})
+        
+                  Please review the changes and update the dependencies accordingly.`
+                });
+              }
+        
+              core.setOutput('issue_number', issue_number);
+            })();
 
   update-code:
     needs: handle-issue
