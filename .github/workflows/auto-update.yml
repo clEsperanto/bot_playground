@@ -16,7 +16,7 @@ jobs:
 
       - name: Check if issues already exists
         id: check-issues
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
@@ -41,7 +41,7 @@ jobs:
       - name: Create issue
         id: create-issue
         if: steps.check-issues.outputs.issue_number == ''
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
@@ -66,7 +66,7 @@ jobs:
       - name: Add message
         id: add-message
         if: steps.check-issues.outputs.issue_number != ''
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
@@ -120,8 +120,11 @@ jobs:
       - name: Check if branch exists or create a new one
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.RELEASE_PAT }}
           script: |
-            const branchName = `auto-update-version-${{ github.event.client_payload.release_tag }}`;
+            const github = require('@actions/github');
+            const context = github.context;
+            const branchName = `auto-update-version-${context.payload.client_payload.release_tag}`;
             const { data: branches } = await github.repos.listBranches({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -137,7 +140,7 @@ jobs:
                 sha: context.sha,
               });
             }
-              
+
       - name: Get GenCLE and update code
         id: update-code
         env:
@@ -165,7 +168,7 @@ jobs:
           
       - name: Check if PR already exists
         id: check-pr
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
@@ -188,7 +191,7 @@ jobs:
       - name: Create a pull request
         id: create-pr
         if: steps.check-pr.outputs.pr_number == ''
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
