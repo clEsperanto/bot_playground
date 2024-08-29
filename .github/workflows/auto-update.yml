@@ -172,6 +172,9 @@ jobs:
             });
             console.log(branchesAfter.map(branch => branch.name));
 
+      
+      - name: Checkout code
+        uses: actions/checkout@v2
             
       - name: Get GenCLE and update code
         id: update-code
