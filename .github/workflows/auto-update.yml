@@ -19,7 +19,8 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
-          script: |      
+          script: |    
+            octokit = github.getOctokit(process.env.RELEASE_PAT);
             console.log("Checking if issue already exists for release tag: " + context.payload.client_payload.release_tag);
             const { data: issues } = await octokit.issues.listForRepo({
               owner: context.repo.owner,
