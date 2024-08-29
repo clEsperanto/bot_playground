@@ -53,10 +53,11 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
+            const issue_number = core.getInput('issue_number');
             await github.issues.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: steps.check-issues.outputs.issue_number,
+              issue_number: issue_number,
               body: 'This is an automated issue created by the CLIc to update the dependencies.'
             });
 
@@ -78,26 +79,26 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b update-dependencies-${{ github.event.inputs.release_tag }}
-          git add .
-          git commit -m "Update dependencies"
-          git push https://$GH_TOKEN@github.com/${{ github.repository }}.git update-dependencies-${{ github.event.inputs.release_tag }}
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -b update-dependencies-${{ github.event.inputs.release_tag }}
+            git add .
+            git commit -m "Update dependencies"
+            git push https://$GH_TOKEN@github.com/${{ github.repository }}.git update-dependencies-${{ github.event.inputs.release_tag }}
           
-
       - name: Create a pull request for the new branch
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
+            const issue_number = core.getInput('issue_number');
             const { data: pr } = await github.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `Update dependencies to ${context.payload.client_payload.release_tag}`,
               head: `update-dependencies-${context.payload.client_payload.release_tag}`,
               base: 'main',
-              body: `This PR updates pyclesperanto tiers code to clEsperanto/CLIc@${{ github.event.client_payload.release_tag }}.\n\ncloses #${{ steps.check-issues.outputs.issue_number }}`
+              body: `This PR updates pyclesperanto tiers code to clEsperanto/CLIc@${{ github.event.client_payload.release_tag }}.\n\ncloses #${issue_number}`
             });
 
             core.setOutput('pr_number', pr.number);
