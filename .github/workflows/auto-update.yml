@@ -64,7 +64,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: ${{ steps.check-issues.outputs.issue_number }},
               body: 'We are rerunning the update process.'
-            );
+            });
 
             core.setOutput('issue_number', ${{ steps.check-issues.outputs.issue_number }});
 
