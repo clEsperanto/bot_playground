@@ -45,8 +45,14 @@ jobs:
             const { data: issue } = await github.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Update to ${context.payload.client_payload.release_tag}`,
-              body: 'This is an automated issue created by the CLIc to update the dependencies.',
+              title: `Auto-Update to ${context.payload.client_payload.release_tag}`,
+              body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
+
+            ### Release Information
+            - **Release Tag:** ${context.payload.client_payload.release_tag}
+            - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
+
+            Please review the changes and update the dependencies accordingly.`,
               labels: ['auto-update']
             });
 
@@ -63,7 +69,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: ${{ steps.check-issues.outputs.issue_number }},
-              body: 'We are rerunning the update process.'
+              body: `Auto-Update rerunned: ${context.workflow}.`
             });
 
             core.setOutput('issue_number', ${{ steps.check-issues.outputs.issue_number }});
@@ -121,7 +127,6 @@ jobs:
               core.setOutput('pr_number', '');
             }
 
-
       - name: Create a pull request
         id: create-pr
         if: steps.check-pr.outputs.pr_number == ''
@@ -135,7 +140,13 @@ jobs:
               title: `Update dependencies to ${context.payload.client_payload.release_tag}`,
               head: `update-dependencies-${context.payload.client_payload.release_tag}`,
               base: 'main',
-              body: 'This is an automated pull request created by the CLIc to update the dependencies.'
-            });
-
+              body: `### Automated Dependency Update
+      
+            This is an automated pull request created by the auto-update workflow following up a new Release of CLIc.
+            
+            **Release Tag:** ${context.payload.client_payload.release_tag}
+                        
+            Closes #${{ steps.check-issues.outputs.issue_number }}`,
+                  });
+      
             core.setOutput('pr_number', pr.number);
