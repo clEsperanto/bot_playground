@@ -147,7 +147,7 @@ jobs:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
             const branchName = `auto-update-version-${context.payload.client_payload.release_tag}`;
-            const { data: branches } = await github.repos.listBranches({
+            const { data: branches } = await github.rest.repos.listBranches({
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
