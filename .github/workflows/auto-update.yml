@@ -114,6 +114,7 @@ jobs:
         run: |
             git clone https://$GH_TOKEN@github.com/clEsperanto/gencle.git gencle
             python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} ${{ github.event.client_payload.release_tag }}
+            rm -rf gencle
 
       - name: Commit and push changes
         id: commit-changes
