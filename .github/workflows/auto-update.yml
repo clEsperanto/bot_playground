@@ -85,7 +85,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue_number,
-              body: `Rerunn of the Auto-Update workflow : ${{ github.run_number }}.`
+              body: `Rerun of the Auto-Update workflow: #${{ github.run_number }}.`
             });
 
             core.setOutput('issue_number', issue_number);
