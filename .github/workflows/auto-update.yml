@@ -155,12 +155,16 @@ jobs:
             const branchExists = branches.some(branch => branch.name === branchName);
       
             if (!branchExists) {
+              console.log(`Creating new branch: ${branchName}`);
               await github.rest.git.createRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 ref: `refs/heads/${branchName}`,
                 sha: context.sha,
               });
+            }
+            else {
+              console.log(`Branch already exists: ${branchName}`);
             }
             
       - name: Get GenCLE and update code
@@ -170,7 +174,7 @@ jobs:
         run: |
           git branch
           # Print the current branch
-          echo "Checking out new branch for update"
+          echo "Checking out branch auto-update-version-${{ github.event.client_payload.release_tag }}"
           git checkout auto-update-version-${{ github.event.client_payload.release_tag }}
           git branch
           
