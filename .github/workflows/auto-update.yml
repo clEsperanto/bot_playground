@@ -27,7 +27,7 @@ jobs:
               state: 'all'
             });
 
-            const issue = issues.find(issue => issue.title === `Auto-Update to new CLIc version ${context.payload.client_payload.release_tag}`);
+            const issue = issues.find(issue => issue.title === `Auto-Update to version ${context.payload.client_payload.release_tag}`);
 
             if (issue) {
               core.setOutput('issue_number', issue.number);
@@ -45,7 +45,7 @@ jobs:
             const { data: issue } = await github.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Auto-Update to new CLIc version ${context.payload.client_payload.release_tag}`,
+              title: `Auto-Update to version ${context.payload.client_payload.release_tag}`,
               body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
 
             ### Release Information
@@ -111,7 +111,7 @@ jobs:
       - name: Check if branch exist or create a new one
         run: |
           git fetch --all
-          git checkout -b update-dependencies-${{ github.event.client_payload.release_tag }} || git checkout update-dependencies-${{ github.event.client_payload.release_tag }}
+          git checkout -b auto-update-version-${{ github.event.client_payload.release_tag }} || git checkout auto-update-version-${{ github.event.client_payload.release_tag }}
 
       - name: Get GenCLE and update code
         id: update-code
@@ -127,8 +127,8 @@ jobs:
         run: |
           if ! git diff-index --quiet HEAD; then
             git add .
-            git commit -m "Update dependencies to ${{ github.event.client_payload.release_tag }}"
-            git push origin update-dependencies-${{ github.event.client_payload.release_tag }}
+            git commit -m "Update tiers to ${{ github.event.client_payload.release_tag }}"
+            git push origin auto-update-version-${{ github.event.client_payload.release_tag }}
           fi
           
       - name: Check if PR already exists
@@ -141,7 +141,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
-              head: `update-dependencies-${context.payload.client_payload.release_tag}`
+              head: `auto-update-version-${context.payload.client_payload.release_tag}`
             });
 
             if (prs.length > 0) {
@@ -160,8 +160,8 @@ jobs:
             const { data: pr } = await github.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Update dependencies to ${context.payload.client_payload.release_tag}`,
-              head: `update-dependencies-${context.payload.client_payload.release_tag}`,
+              title: `Auto-Update to version ${context.payload.client_payload.release_tag}`,
+              head: `auto-update-version-${context.payload.client_payload.release_tag}`,
               base: 'main',
               body: `### Automated Dependency Update
       
