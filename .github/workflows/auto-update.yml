@@ -51,21 +51,25 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
+            const github = require('@actions/github');
+            const core = require('@actions/core');
+            const context = github.context;
+      
             console.log("Creating new issue for release tag: " + context.payload.client_payload.release_tag);
-            const { data: issue } = await github.issues.create({
+            const { data: issue } = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `Auto-Update to version ${context.payload.client_payload.release_tag}`,
               body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
-
-            ### Release Information
-            - **Release Tag:** ${context.payload.client_payload.release_tag}
-            - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
-
-            Please review the changes and update the dependencies accordingly.`,
+      
+              ### Release Information
+              - **Release Tag:** ${context.payload.client_payload.release_tag}
+              - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
+      
+              Please review the changes and update the dependencies accordingly.`,
               labels: ['auto-update']
             });
-
+      
             console.log("Created issue with number: " + issue.number);
             core.setOutput('issue_number', issue.number);
 
@@ -76,14 +80,14 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
-            const issue_number = ${{ steps.check-issues.outputs.issue_number }};
+            const issue_number = steps.check-issues.outputs.issue_number;
             console.log("Adding message to existing issue with number: " + issue_number);
             const { data: issue } = await github.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue_number
             });
-
+      
             if (issue.state === 'closed') {
               console.log("Reopening closed issue with number: " + issue_number);
               await github.issues.update({
@@ -92,22 +96,22 @@ jobs:
                 issue_number: issue_number,
                 state: 'open'
               });
-
+      
               console.log("Adding comment to reopened issue with number: " + issue_number);
               await github.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue_number,
                 body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
-
-            ### Release Information
-            - **Release Tag:** ${context.payload.client_payload.release_tag}
-            - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
-
-            Please review the changes and update the dependencies accordingly.`
+      
+                ### Release Information
+                - **Release Tag:** ${context.payload.client_payload.release_tag}
+                - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
+      
+                Please review the changes and update the dependencies accordingly.`
               });
             }
-
+      
             core.setOutput('issue_number', issue_number);
 
   update-code:
@@ -150,14 +154,14 @@ jobs:
       - name: Get GenCLE and update code
         id: update-code
         env:
-            GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
-            echo "Cloning GenCLE repository"
-            git clone https://$GH_TOKEN@github.com/clEsperanto/gencle.git gencle
-            echo "Running update script"
-            python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} ${{ github.event.client_payload.release_tag }}
-            echo "Cleaning up GenCLE repository"
-            rm -rf gencle
+          echo "Cloning GenCLE repository"
+          git clone https://$GH_TOKEN@github.com/clEsperanto/gencle.git gencle
+          echo "Running update script"
+          python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} ${{ github.event.client_payload.release_tag }}
+          echo "Cleaning up GenCLE repository"
+          rm -rf gencle
 
       - name: Commit and push changes if any
         id: commit-push
@@ -170,27 +174,27 @@ jobs:
             git push origin auto-update-version-${{ github.event.client_payload.release_tag }}
           else
             echo "No changes detected, skipping commit"
-          fi
-          
+
       - name: Check if PR already exists
         id: check-pr
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
-            console.log("Checking if PR already exists for branch: auto-update-version-" + context.payload.client_payload.release_tag);
-            const { data: prs } = await github.pulls.list({
+            const releaseTag = context.payload.client_payload.release_tag;
+            console.log(`Checking if PR already exists for branch: auto-update-version-${releaseTag}`);
+            const { data: prs } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
-              head: `auto-update-version-${context.payload.client_payload.release_tag}`
+              head: `auto-update-version-${releaseTag}`
             });
-
+      
             if (prs.length > 0) {
-              console.log("PR already exists with number: " + prs[0].number);
+              console.log(`PR already exists with number: ${prs[0].number}`);
               core.setOutput('pr_number', prs[0].number);
             } else {
-              console.log("No existing PR found for branch: auto-update-version-" + context.payload.client_payload.release_tag);
+              console.log(`No existing PR found for branch: auto-update-version-${releaseTag}`);
               core.setOutput('pr_number', '');
             }
 
@@ -201,23 +205,24 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
-            console.log("Creating new PR for branch: auto-update-version-" + context.payload.client_payload.release_tag);
-            const { data: pr } = await github.pulls.create({
+            const releaseTag = context.payload.client_payload.release_tag;
+            console.log(`Creating new PR for branch: auto-update-version-${releaseTag}`);
+            const { data: pr } = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Auto-Update to version ${context.payload.client_payload.release_tag}`,
-              head: `auto-update-version-${context.payload.client_payload.release_tag}`,
+              title: `Auto-Update to version ${releaseTag}`,
+              head: `auto-update-version-${releaseTag}`,
               base: 'main',
               body: `### Automated Dependency Update
-      
+              
               This is an automated pull request created by the auto-update workflow following up a new Release of CLIc.
               
-              **Release Tag:** ${context.payload.client_payload.release_tag}
-              **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
+              **Release Tag:** ${releaseTag}
+              **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${releaseTag})
                           
               Closes #${{ needs.handle-issue.outputs.issue_number }}`,
               labels: ['auto-update']
             });
       
-            console.log("Created PR with number: " + pr.number);
+            console.log(`Created PR with number: ${pr.number}`);
             core.setOutput('pr_number', pr.number);
