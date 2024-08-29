@@ -165,12 +165,12 @@ jobs:
               base: 'main',
               body: `### Automated Dependency Update
       
-            This is an automated pull request created by the auto-update workflow following up a new Release of CLIc.
-            
-            **Release Tag:** ${context.payload.client_payload.release_tag}
-            **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
-                        
-            Closes #${{ needs.handle-issue.outputs.issue_number }}`,
+              This is an automated pull request created by the auto-update workflow following up a new Release of CLIc.
+              
+              **Release Tag:** ${context.payload.client_payload.release_tag}
+              **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
+                          
+              Closes #${{ needs.handle-issue.outputs.issue_number }}`,
               labels: ['auto-update']
             });
       
