@@ -45,7 +45,7 @@ jobs:
             const { data: issue } = await github.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Auto-Update to ${context.payload.client_payload.release_tag}`,
+              title: `Auto-Update to new version ${context.payload.client_payload.release_tag}`,
               body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
 
             ### Release Information
