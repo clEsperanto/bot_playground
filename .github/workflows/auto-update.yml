@@ -46,7 +46,7 @@ jobs:
             });
 
             core.setOutput('issue_number', issue.number);
-            
+
 
   update-code:
     needs: handle-issue
@@ -56,6 +56,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Get GenCLE and update code
+        id: update-code
         env:
             GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
@@ -63,6 +64,7 @@ jobs:
             python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} "clEsperanto/CLIc" ${{ github.event.inputs.release_tag }}
 
       - name: Commit and push changes in a new branch
+        id: commit-changes
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
@@ -74,6 +76,7 @@ jobs:
             git push https://$GH_TOKEN@github.com/${{ github.repository }}.git update-dependencies-${{ github.event.inputs.release_tag }}
           
       - name: Create a pull request for the new branch
+        id: create-pr
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
