@@ -155,7 +155,7 @@ jobs:
             const branchExists = branches.some(branch => branch.name === branchName);
       
             if (!branchExists) {
-              await github.git.createRef({
+              await github.rest.git.createRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 ref: `refs/heads/${branchName}`,
@@ -204,7 +204,7 @@ jobs:
       
             if (prs.length > 0) {
               console.log(`PR already exists with number: ${prs[0].number}`);
-              core.setOutput('pr_number', prs[0].number);
+              core.setOutput('pr_numbe', prs[0].number);
             } else {
               console.log(`No existing PR found for branch: auto-update-version-${releaseTag}`);
               core.setOutput('pr_number', '');
