@@ -250,8 +250,7 @@ jobs:
               **Release Tag:** ${releaseTag}
               **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${releaseTag})
                           
-              Closes #${{ needs.handle-issue.outputs.issue_number }}`,
-              labels: ['auto-update']
+              Closes #${{ needs.handle-issue.outputs.issue_number }}`
             });
       
             console.log(`Created PR with number: ${pr.number}`);
