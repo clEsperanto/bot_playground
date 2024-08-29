@@ -20,6 +20,7 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
+            console.log("Checking if issue already exists for release tag: " + context.payload.client_payload.release_tag);
             const { data: issues } = await github.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -30,8 +31,10 @@ jobs:
             const issue = issues.find(issue => issue.title === `Auto-Update to version ${context.payload.client_payload.release_tag}`);
 
             if (issue) {
+              console.log("Issue already exists with number: " + issue.number);
               core.setOutput('issue_number', issue.number);
             } else {
+              console.log("No existing issue found for release tag: " + context.payload.client_payload.release_tag);
               core.setOutput('issue_number', '');
             }
 
@@ -42,6 +45,7 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
+            console.log("Creating new issue for release tag: " + context.payload.client_payload.release_tag);
             const { data: issue } = await github.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -56,6 +60,7 @@ jobs:
               labels: ['auto-update']
             });
 
+            console.log("Created issue with number: " + issue.number);
             core.setOutput('issue_number', issue.number);
 
       - name: Add message
@@ -66,6 +71,7 @@ jobs:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
             const issue_number = ${{ steps.check-issues.outputs.issue_number }};
+            console.log("Adding message to existing issue with number: " + issue_number);
             const { data: issue } = await github.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -73,6 +79,7 @@ jobs:
             });
 
             if (issue.state === 'closed') {
+              console.log("Reopening closed issue with number: " + issue_number);
               await github.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -80,6 +87,7 @@ jobs:
                 state: 'open'
               });
 
+              console.log("Adding comment to reopened issue with number: " + issue_number);
               await github.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -105,12 +113,15 @@ jobs:
 
       - name: Configure git
         run: |
+          echo "Configuring git user"
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Check if branch exist or create a new one
         run: |
+          echo "Fetching all branches"
           git fetch --all
+          echo "Checking out branch auto-update-version-${{ github.event.client_payload.release_tag }}"
           git checkout -B auto-update-version-${{ github.event.client_payload.release_tag }}
 
       - name: Get GenCLE and update code
@@ -118,17 +129,24 @@ jobs:
         env:
             GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
+            echo "Cloning GenCLE repository"
             git clone https://$GH_TOKEN@github.com/clEsperanto/gencle.git gencle
+            echo "Running update script"
             python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} ${{ github.event.client_payload.release_tag }}
+            echo "Cleaning up GenCLE repository"
             rm -rf gencle
 
       - name: Commit and push changes if any
         id: commit-push
         run: |
+          echo "Checking for changes to commit"
           if ! git diff-index --quiet HEAD; then
+            echo "Changes detected, committing and pushing"
             git add .
             git commit -m "Update tiers to ${{ github.event.client_payload.release_tag }}"
             git push origin auto-update-version-${{ github.event.client_payload.release_tag }}
+          else
+            echo "No changes detected, skipping commit"
           fi
           
       - name: Check if PR already exists
@@ -137,6 +155,7 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
+            console.log("Checking if PR already exists for branch: auto-update-version-" + context.payload.client_payload.release_tag);
             const { data: prs } = await github.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -145,8 +164,10 @@ jobs:
             });
 
             if (prs.length > 0) {
+              console.log("PR already exists with number: " + prs[0].number);
               core.setOutput('pr_number', prs[0].number);
             } else {
+              console.log("No existing PR found for branch: auto-update-version-" + context.payload.client_payload.release_tag);
               core.setOutput('pr_number', '');
             }
 
@@ -157,6 +178,7 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
+            console.log("Creating new PR for branch: auto-update-version-" + context.payload.client_payload.release_tag);
             const { data: pr } = await github.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -174,4 +196,5 @@ jobs:
               labels: ['auto-update']
             });
       
+            console.log("Created PR with number: " + pr.number);
             core.setOutput('pr_number', pr.number);
