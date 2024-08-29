@@ -46,20 +46,7 @@ jobs:
             });
 
             core.setOutput('issue_number', issue.number);
-
-      - name: Update issue
-        if: steps.check-issues.outputs.issue_number != ''
-        uses: actions/github-script@v3
-        with:
-          github-token: ${{ secrets.RELEASE_PAT }}
-          script: |
-            const issue_number = core.getInput('issue_number');
-            await github.issues.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue_number,
-              body: 'This is an automated issue created by the CLIc to update the dependencies.'
-            });
+            
 
   update-code:
     needs: handle-issue
