@@ -20,10 +20,9 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
-            const octokit = github.getOctokit(core.getInput('github-token'));     
             (async () => {
               console.log("Checking if issue already exists for release tag: " + github.context.payload.client_payload.release_tag);
-              const { data: issues } = await octokit.issues.listForRepo({
+              const { data: issues } = await github.issues.listForRepo({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
                 labels: 'auto-update',
