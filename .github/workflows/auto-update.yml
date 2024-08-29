@@ -220,7 +220,7 @@ jobs:
       
             if (prs.length > 0) {
               console.log(`PR already exists with number: ${prs[0].number}`);
-              core.setOutput('pr_numbe', prs[0].number);
+              core.setOutput('pr_number', prs[0].number);
             } else {
               console.log(`No existing PR found for branch: auto-update-version-${releaseTag}`);
               core.setOutput('pr_number', '');
