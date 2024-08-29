@@ -7,6 +7,8 @@ on:
 jobs:
   handle-issue:
     runs-on: ubuntu-latest
+    outputs:
+      issue_number: ${{ steps.check-issues.outputs.issue_number }}
     steps:
       - name: Get release tag
         run: |
@@ -29,6 +31,8 @@ jobs:
 
             if (issue) {
               core.setOutput('issue_number', issue.number);
+            } else {
+              core.setOutput('issue_number', '');
             }
 
       - name: Create issue
@@ -46,7 +50,6 @@ jobs:
             });
 
             core.setOutput('issue_number', issue.number);
-
 
   update-code:
     needs: handle-issue
@@ -81,7 +84,7 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
-            const issue_number = core.getInput('issue_number');
+            const issue_number = ${{ needs.handle-issue.outputs.issue_number }};
             const { data: pr } = await github.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
