@@ -27,7 +27,7 @@ jobs:
               state: 'all'
             });
 
-            const issue = issues.find(issue => issue.title === `Update to ${context.payload.client_payload.release_tag}`);
+            const issue = issues.find(issue => issue.title === `Auto-Update to new CLIc version ${context.payload.client_payload.release_tag}`);
 
             if (issue) {
               core.setOutput('issue_number', issue.number);
@@ -45,7 +45,7 @@ jobs:
             const { data: issue } = await github.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Auto-Update to new version ${context.payload.client_payload.release_tag}`,
+              title: `Auto-Update to new CLIc version ${context.payload.client_payload.release_tag}`,
               body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
 
             ### Release Information
@@ -84,7 +84,13 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue_number,
-                body: `Rerun of the Auto-Update workflow: #${{ github.run_number }}.`
+                body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
+
+            ### Release Information
+            - **Release Tag:** ${context.payload.client_payload.release_tag}
+            - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
+
+            Please review the changes and update the dependencies accordingly.`
               });
             }
 
@@ -162,8 +168,10 @@ jobs:
             This is an automated pull request created by the auto-update workflow following up a new Release of CLIc.
             
             **Release Tag:** ${context.payload.client_payload.release_tag}
+            **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${context.payload.client_payload.release_tag})
                         
             Closes #${{ needs.handle-issue.outputs.issue_number }}`,
+              labels: ['auto-update']
             });
       
             core.setOutput('pr_number', pr.number);
