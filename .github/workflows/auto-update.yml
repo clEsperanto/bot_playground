@@ -36,9 +36,9 @@ jobs:
               }
 
               console.log(`Checking if issue already exists for release tag: ${releaseTag}`);
-              const { data: issues } = await github.issues.listForRepo({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
+              const { data: issues } = await octokit.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
                 labels: 'auto-update',
                 state: 'all'
               });
@@ -64,9 +64,9 @@ jobs:
             (async () => {
               const releaseTag = context.payload.client_payload?.release_tag;
               console.log(`Creating new issue for release tag: ${releaseTag}`);
-              const { data: issue } = await github.rest.issues.create({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
+              const { data: issue } = await octokit.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
                 title: `Auto-Update to version ${releaseTag}`,
                 body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
         
@@ -93,25 +93,25 @@ jobs:
               const releaseTag = context.payload.client_payload?.release_tag;
               const issue_number = steps.check-issues.outputs.issue_number;
               console.log(`Adding message to existing issue with number: ${issue_number}`);
-              const { data: issue } = await github.rest.issues.get({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
+              const { data: issue } = await octokit.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
                 issue_number: issue_number
               });
         
               if (issue.state === 'closed') {
                 console.log(`Reopening closed issue with number: ${issue_number}`);
-                await github.rest.issues.update({
-                  owner: github.context.repo.owner,
-                  repo: github.context.repo.repo,
+                await octokit.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
                   issue_number: issue_number,
                   state: 'open'
                 });
         
                 console.log(`Adding comment to reopened issue with number: ${issue_number}`);
-                await github.rest.issues.createComment({
-                  owner: github.context.repo.owner,
-                  repo: github.context.repo.repo,
+                await octokit.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
                   issue_number: issue_number,
                   body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
         
