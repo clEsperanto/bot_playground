@@ -180,6 +180,7 @@ jobs:
           echo "Running update script"
           python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} ${{ github.event.client_payload.release_tag }}
           
+          git pull --rebase origin auto-update-version-${{ github.event.client_payload.release_tag }}
           git add .
           git commit -m "Update tiers to ${{ github.event.client_payload.release_tag }}"
           git push origin auto-update-version-${{ github.event.client_payload.release_tag }}
