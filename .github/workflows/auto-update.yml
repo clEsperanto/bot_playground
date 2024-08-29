@@ -163,11 +163,21 @@ jobs:
               });
             }
 
+            await github.rest.git.updateRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `heads/${branchName}`,
+              sha: context.sha,
+              force: false
+            });
+            
       - name: Get GenCLE and update code
         id: update-code
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
+          # print the current branch
+          git branch
           echo "Cloning GenCLE repository"
           git clone https://$GH_TOKEN@github.com/clEsperanto/gencle.git gencle
           echo "Running update script"
