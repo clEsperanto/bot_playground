@@ -65,14 +65,14 @@ jobs:
               const releaseTag = context.payload.client_payload?.release_tag;
               console.log(`Creating new issue for release tag: ${releaseTag}`);
               const { data: issue } = await github.rest.issues.create({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
                 title: `Auto-Update to version ${releaseTag}`,
                 body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
         
                 ### Release Information
                 - **Release Tag:** ${releaseTag}
-                - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${github.context.payload.client_payload.release_tag})
+                - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${releaseTag})
         
                 Please review the changes and update the dependencies accordingly.`,
                 labels: ['auto-update']
@@ -85,33 +85,34 @@ jobs:
       - name: Reopen issue
         id: reopen-issue
         if: steps.check-issues.outputs.issue_number != ''
+        env:
+          issue_number: ${{ steps.check-issues.outputs.issue_number }}
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
             (async () => {
               const releaseTag = context.payload.client_payload?.release_tag;
-              const issue_number = steps.check-issues.outputs.issue_number;
               console.log(`Adding message to existing issue with number: ${issue_number}`);
               const { data: issue } = await github.rest.issues.get({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
                 issue_number: issue_number
               });
         
               if (issue.state === 'closed') {
                 console.log(`Reopening closed issue with number: ${issue_number}`);
                 await github.rest.issues.update({
-                  owner: github.context.repo.owner,
-                  repo: github.context.repo.repo,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
                   issue_number: issue_number,
                   state: 'open'
                 });
         
                 console.log(`Adding comment to reopened issue with number: ${issue_number}`);
                 await github.rest.issues.createComment({
-                  owner: github.context.repo.owner,
-                  repo: github.context.repo.repo,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
                   issue_number: issue_number,
                   body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
         
