@@ -194,6 +194,8 @@ jobs:
           echo "Cleaning up GenCLE repository"
           rm -rf gencle
           
+          echo "Checking for changes"
+          git pull origin auto-update-version-${{ github.event.client_payload.release_tag }}
           if ! git diff-index --quiet HEAD; then
             git add .
             git commit -m "Update tiers to ${{ github.event.client_payload.release_tag }}"
