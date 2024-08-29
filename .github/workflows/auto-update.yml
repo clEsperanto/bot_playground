@@ -163,7 +163,7 @@ jobs:
             
             **Release Tag:** ${context.payload.client_payload.release_tag}
                         
-            Closes #${{ steps.check-issues.outputs.issue_number }}`,
+            Closes #${{ steps.check-issues.outputs.issue_number }}',
               });
       
             core.setOutput('pr_number', pr.number);
