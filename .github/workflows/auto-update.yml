@@ -75,35 +75,16 @@ jobs:
             python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} "clEsperanto/CLIc" ${{ github.event.inputs.release_tag }}
 
       - name: Commit and push changes in a new branch
-        id: commit-and-push
-        uses: actions/github-script@v3
-        with:
-          github-token: ${{ secrets.RELEASE_PAT }}
-          script: |
-            const { data: branch } = await github.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/heads/update-dependencies-${context.payload.client_payload.release_tag}`,
-              sha: context.sha
-            });
-
-            const { exec } = require('child_process');
-            const execPromise = (command) => new Promise((resolve, reject) => {
-              exec(command, (error, stdout, stderr) => {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve(stdout || stderr);
-                }
-              });
-            });
-
-            await execPromise('git config --global user.name "github-actions[bot]"');
-            await execPromise('git config --global user.email "github-actions[bot]@users.noreply.github.com"');
-            await execPromise(`git checkout ${branch.ref}`);
-            await execPromise('git add .');
-            await execPromise('git commit -m "Update dependencies"');
-            await execPromise(`git push origin ${branch.ref}`);
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b update-dependencies-${{ github.event.inputs.release_tag }}
+          git add .
+          git commit -m "Update dependencies"
+          git push https://$GH_TOKEN@github.com/${{ github.repository }}.git update-dependencies-${{ github.event.inputs.release_tag }}
+          
 
       - name: Create a pull request for the new branch
         uses: actions/github-script@v3
