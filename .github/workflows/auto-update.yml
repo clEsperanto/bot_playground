@@ -162,18 +162,16 @@ jobs:
                 ref: `refs/heads/${branchName}`,
                 sha: context.sha,
               });
-            }
-            else {
+            } else {
               console.log(`Branch already exists: ${branchName}`);
             }
-
-            # list branches
+      
             const { data: branchesAfter } = await github.rest.repos.listBranches({
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
             console.log(branchesAfter.map(branch => branch.name));
-            
+
             
       - name: Get GenCLE and update code
         id: update-code
