@@ -178,6 +178,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
+          git fetch origin
           git branch
           # Print the current branch
           echo "Checking out branch auto-update-version-${{ github.event.client_payload.release_tag }}"
