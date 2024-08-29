@@ -19,10 +19,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
-          script: |
-            const octokit = github.getOctokit(core.getInput('github-token'));
-            const context = github.context;
-      
+          script: |      
             console.log("Checking if issue already exists for release tag: " + context.payload.client_payload.release_tag);
             const { data: issues } = await octokit.issues.listForRepo({
               owner: context.repo.owner,
@@ -47,9 +44,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
-          script: |
-            const context = github.context;
-      
+          script: |     
             console.log("Creating new issue for release tag: " + context.payload.client_payload.release_tag);
             const { data: issue } = await github.rest.issues.create({
               owner: context.repo.owner,
@@ -127,7 +122,6 @@ jobs:
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
-            const context = github.context;
             const branchName = `auto-update-version-${context.payload.client_payload.release_tag}`;
             const { data: branches } = await github.repos.listBranches({
               owner: context.repo.owner,
