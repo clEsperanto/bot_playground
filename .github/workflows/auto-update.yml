@@ -111,7 +111,7 @@ jobs:
       - name: Check if branch exist or create a new one
         run: |
           git fetch --all
-          git checkout -b auto-update-version-${{ github.event.client_payload.release_tag }} || git checkout auto-update-version-${{ github.event.client_payload.release_tag }}
+          git checkout -B auto-update-version-${{ github.event.client_payload.release_tag }}
 
       - name: Get GenCLE and update code
         id: update-code
