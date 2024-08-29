@@ -189,6 +189,7 @@ jobs:
             git push origin auto-update-version-${{ github.event.client_payload.release_tag }}
           else
             echo "No changes detected, skipping commit"
+          fi
         shell: /usr/bin/bash -e {0}
 
       - name: Check if PR already exists
