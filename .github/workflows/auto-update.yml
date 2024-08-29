@@ -1,0 +1,122 @@
+name: Auto Update
+
+on:
+  repository_dispatch:
+    types: [custom_event]
+
+jobs:
+  handle-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get release tag
+        run: |
+          echo "Received release tag: ${{ github.event.client_payload.release_tag }} from CLIc"
+
+      - name: Check if issues already exists
+        id: check-issues
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.RELEASE_PAT }}
+          script: |
+            const { data: issues } = await github.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'auto-update',
+              state: 'open'
+            });
+
+            const issue = issues.find(issue => issue.title === `Update to ${context.payload.client_payload.release_tag}`);
+
+            if (issue) {
+              core.setOutput('issue_number', issue.number);
+            }
+
+      - name: Create issue
+        if: steps.check-issues.outputs.issue_number == ''
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.RELEASE_PAT }}
+          script: |
+            const { data: issue } = await github.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Update to ${context.payload.client_payload.release_tag}`,
+              body: 'This is an automated issue created by the CLIc to update the dependencies.',
+              labels: ['auto-update']
+            });
+
+            core.setOutput('issue_number', issue.number);
+
+      - name: Update issue
+        if: steps.check-issues.outputs.issue_number != ''
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.RELEASE_PAT }}
+          script: |
+            await github.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: steps.check-issues.outputs.issue_number,
+              body: 'This is an automated issue created by the CLIc to update the dependencies.'
+            });
+
+  update-code:
+    needs: handle-issue
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get GenCLE and update code
+        env:
+            GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+        run: |
+            git clone https://$GH_TOKEN@github.com/clEsperanto/gencle.git gencle
+            python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} "clEsperanto/CLIc" ${{ github.event.inputs.release_tag }}
+
+      - name: Commit and push changes in a new branch
+        id: commit-and-push
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.RELEASE_PAT }}
+          script: |
+            const { data: branch } = await github.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/heads/update-dependencies-${context.payload.client_payload.release_tag}`,
+              sha: context.sha
+            });
+
+            const { exec } = require('child_process');
+            const execPromise = (command) => new Promise((resolve, reject) => {
+              exec(command, (error, stdout, stderr) => {
+                if (error) {
+                  reject(error);
+                } else {
+                  resolve(stdout || stderr);
+                }
+              });
+            });
+
+            await execPromise('git config --global user.name "github-actions[bot]"');
+            await execPromise('git config --global user.email "github-actions[bot]@users.noreply.github.com"');
+            await execPromise(`git checkout ${branch.ref}`);
+            await execPromise('git add .');
+            await execPromise('git commit -m "Update dependencies"');
+            await execPromise(`git push origin ${branch.ref}`);
+
+      - name: Create a pull request for the new branch
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.RELEASE_PAT }}
+          script: |
+            const { data: pr } = await github.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Update dependencies to ${context.payload.client_payload.release_tag}`,
+              head: `update-dependencies-${context.payload.client_payload.release_tag}`,
+              base: 'main',
+              body: `This PR updates pyclesperanto tiers code to clEsperanto/CLIc@${{ github.event.client_payload.release_tag }}.\n\ncloses #${{ steps.check-issues.outputs.issue_number }}`
+            });
+
+            core.setOutput('pr_number', pr.number);
