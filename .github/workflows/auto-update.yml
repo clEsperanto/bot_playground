@@ -141,36 +141,38 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      # - name: Check if branch exists or create a new one
-      #   uses: actions/github-script@v6
-      #   with:
-      #     github-token: ${{ secrets.RELEASE_PAT }}
-      #     script: |
-      #       const branchName = `auto-update-version-${context.payload.client_payload.release_tag}`;
-      #       const { data: branches } = await github.rest.repos.listBranches({
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #       });
+      - name: Check if branch exists or create a new one
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.RELEASE_PAT }}
+          script: |
+            const branchName = `auto-update-version-${context.payload.client_payload.release_tag}`;
+            const { data: branches } = await github.rest.repos.listBranches({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
       
-      #       const branchExists = branches.some(branch => branch.name === branchName);
+            const branchExists = branches.some(branch => branch.name === branchName);
       
-      #       if (!branchExists) {
-      #         await github.rest.git.createRef({
-      #           owner: context.repo.owner,
-      #           repo: context.repo.repo,
-      #           ref: `refs/heads/${branchName}`,
-      #           sha: context.sha,
-      #         });
-      #       }
+            if (!branchExists) {
+              await github.rest.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `refs/heads/${branchName}`,
+                sha: context.sha,
+              });
+            }
             
       - name: Get GenCLE and update code
         id: update-code
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
+          git branch
           # Print the current branch
           echo "Checking out new branch for update"
           git checkout -B auto-update-version-${{ github.event.client_payload.release_tag }}
+          git branch
           
           echo "Cloning GenCLE repository"
           git clone https://$GH_TOKEN@github.com/clEsperanto/gencle.git gencle
