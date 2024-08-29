@@ -180,18 +180,19 @@ jobs:
           echo "Running update script"
           python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} ${{ github.event.client_payload.release_tag }}
           
-          # echo "Cleaning up GenCLE repository"
-          # rm -rf gencle
-          
-          echo "Checking for changes to commit"
-          if ! git diff-index --quiet HEAD; then
-            echo "Changes detected, committing and pushing"
-            git add .
-            git commit -m "Update tiers to ${{ github.event.client_payload.release_tag }}"
-            git push origin auto-update-version-${{ github.event.client_payload.release_tag }}
-          else
-            echo "No changes detected, skipping commit"
-          fi
+          git add .
+          git commit -m "Update tiers to ${{ github.event.client_payload.release_tag }}"
+          git push origin auto-update-version-${{ github.event.client_payload.release_tag }}
+
+          # echo "Checking for changes to commit"
+          # if ! git diff-index --quiet HEAD; then
+          #   echo "Changes detected, committing and pushing"
+          #   git add .
+          #   git commit -m "Update tiers to ${{ github.event.client_payload.release_tag }}"
+          #   git push origin auto-update-version-${{ github.event.client_payload.release_tag }}
+          # else
+          #   echo "No changes detected, skipping commit"
+          # fi
         shell: /usr/bin/bash -e {0}
 
       - name: Check if PR already exists
