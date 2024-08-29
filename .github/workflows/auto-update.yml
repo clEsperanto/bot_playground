@@ -180,8 +180,8 @@ jobs:
           echo "Running update script"
           python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} ${{ github.event.client_payload.release_tag }}
           
-          echo "Cleaning up GenCLE repository"
-          rm -rf gencle
+          # echo "Cleaning up GenCLE repository"
+          # rm -rf gencle
           
           echo "Checking for changes to commit"
           if ! git diff-index --quiet HEAD; then
