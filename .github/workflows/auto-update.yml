@@ -36,6 +36,7 @@ jobs:
             }
 
       - name: Create issue
+        id: create-issue
         if: steps.check-issues.outputs.issue_number == ''
         uses: actions/github-script@v3
         with:
@@ -51,6 +52,22 @@ jobs:
 
             core.setOutput('issue_number', issue.number);
 
+      - name: Add message
+        id: add-message
+        if: steps.check-issues.outputs.issue_number != ''
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.RELEASE_PAT }}
+          script: |
+            await github.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.check-issues.outputs.issue_number }},
+              body: 'We are rerunning the update process.'
+            );
+
+            core.setOutput('issue_number', ${{ steps.check-issues.outputs.issue_number }});
+
   update-code:
     needs: handle-issue
     runs-on: ubuntu-latest
@@ -58,40 +75,67 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check if branch exist or create a new one
+        run: |
+          git fetch --all
+          git checkout -b update-dependencies-${{ github.event.client_payload.release_tag }} || git checkout update-dependencies-${{ github.event.client_payload.release_tag }}
+
       - name: Get GenCLE and update code
         id: update-code
         env:
             GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
             git clone https://$GH_TOKEN@github.com/clEsperanto/gencle.git gencle
-            python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} "clEsperanto/CLIc" ${{ github.event.inputs.release_tag }}
+            python ./gencle/pyclesperanto_auto_update.py ${{ github.workspace }} "clEsperanto/CLIc" ${{ github.event.client_payload.release_tag }}
 
-      - name: Commit and push changes in a new branch
+      - name: Commit and push changes
         id: commit-changes
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
-            git config --global user.name "github-actions[bot]"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
-            git checkout -b update-dependencies-${{ github.event.inputs.release_tag }}
             git add .
             git commit -m "Update dependencies"
-            git push https://$GH_TOKEN@github.com/${{ github.repository }}.git update-dependencies-${{ github.event.inputs.release_tag }}
+            git push https://$GH_TOKEN@github.com/${{ github.repository }}.git update-dependencies-${{ github.event.client_payload.release_tag }}
           
-      - name: Create a pull request for the new branch
-        id: create-pr
+      - name: Check if PR already exists
+        id: check-pr
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
-            const issue_number = ${{ needs.handle-issue.outputs.issue_number }};
+            const { data: prs } = await github.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `update-dependencies-${context.payload.client_payload.release_tag}`
+            });
+
+            if (prs.length > 0) {
+              core.setOutput('pr_number', prs[0].number);
+            } else {
+              core.setOutput('pr_number', '');
+            }
+
+
+      - name: Create a pull request
+        id: create-pr
+        if: steps.check-pr.outputs.pr_number == ''
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.RELEASE_PAT }}
+          script: |
             const { data: pr } = await github.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `Update dependencies to ${context.payload.client_payload.release_tag}`,
               head: `update-dependencies-${context.payload.client_payload.release_tag}`,
               base: 'main',
-              body: `This PR updates pyclesperanto tiers code to clEsperanto/CLIc@${{ github.event.client_payload.release_tag }}.\n\ncloses #${issue_number}`
+              body: 'This is an automated pull request created by the CLIc to update the dependencies.'
             });
 
             core.setOutput('pr_number', pr.number);
