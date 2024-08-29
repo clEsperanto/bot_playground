@@ -28,14 +28,14 @@ jobs:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
             (async () => {
-              const releaseTag = github.context.payload.client_payload?.release_tag;
+              const releaseTag = context.payload.client_payload?.release_tag;
               if (!releaseTag) {
                 console.log("No release tag found in client payload.");
                 core.setOutput('issue_number', '');
                 return;
               }
 
-              console.log("Checking if issue already exists for release tag: " + releaseTag);
+              console.log(`Checking if issue already exists for release tag: ${releaseTag}`);
               const { data: issues } = await github.issues.listForRepo({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
@@ -49,7 +49,7 @@ jobs:
                 console.log("Issue already exists with number: " + issue.number);
                 core.setOutput('issue_number', issue.number);
               } else {
-                console.log("No existing issue found for release tag: " + releaseTag);
+                console.log(`No existing issue found for release tag: ${releaseTag}`);
                 core.setOutput('issue_number', '');
               }
             })();
@@ -62,15 +62,16 @@ jobs:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
             (async () => {
-              console.log("Creating new issue for release tag: " + github.context.payload.client_payload.release_tag);
+              const releaseTag = context.payload.client_payload?.release_tag;
+              console.log(`Creating new issue for release tag: ${releaseTag}`);
               const { data: issue } = await github.rest.issues.create({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
-                title: `Auto-Update to version ${github.context.payload.client_payload.release_tag}`,
+                title: `Auto-Update to version ${releaseTag}`,
                 body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
         
                 ### Release Information
-                - **Release Tag:** ${github.context.payload.client_payload.release_tag}
+                - **Release Tag:** ${releaseTag}
                 - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${github.context.payload.client_payload.release_tag})
         
                 Please review the changes and update the dependencies accordingly.`,
@@ -89,8 +90,9 @@ jobs:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
             (async () => {
+              const releaseTag = context.payload.client_payload?.release_tag;
               const issue_number = steps.check-issues.outputs.issue_number;
-              console.log("Adding message to existing issue with number: " + issue_number);
+              console.log(`Adding message to existing issue with number: ${issue_number}`);
               const { data: issue } = await github.rest.issues.get({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
@@ -98,7 +100,7 @@ jobs:
               });
         
               if (issue.state === 'closed') {
-                console.log("Reopening closed issue with number: " + issue_number);
+                console.log(`Reopening closed issue with number: ${issue_number}`);
                 await github.rest.issues.update({
                   owner: github.context.repo.owner,
                   repo: github.context.repo.repo,
@@ -106,7 +108,7 @@ jobs:
                   state: 'open'
                 });
         
-                console.log("Adding comment to reopened issue with number: " + issue_number);
+                console.log(`Adding comment to reopened issue with number: ${issue_number}`);
                 await github.rest.issues.createComment({
                   owner: github.context.repo.owner,
                   repo: github.context.repo.repo,
@@ -114,8 +116,8 @@ jobs:
                   body: `This is an automated issue created by the auto-update workflow following up a new Release of CLIc.
         
                   ### Release Information
-                  - **Release Tag:** ${github.context.payload.client_payload.release_tag}
-                  - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${github.context.payload.client_payload.release_tag})
+                  - **Release Tag:** ${releaseTag}
+                  - **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${releaseTag})
         
                   Please review the changes and update the dependencies accordingly.`
                 });
