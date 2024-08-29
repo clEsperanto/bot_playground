@@ -85,7 +85,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue_number,
-              body: `Auto-Update rerunned: ${context.workflow}.`
+              body: `Rerunn of the Auto-Update workflow : ${{ github.run_number }}.`
             });
 
             core.setOutput('issue_number', issue_number);
@@ -157,13 +157,13 @@ jobs:
               title: `Update dependencies to ${context.payload.client_payload.release_tag}`,
               head: `update-dependencies-${context.payload.client_payload.release_tag}`,
               base: 'main',
-              body: `### Automated Dependency Update
+              body: '### Automated Dependency Update
       
             This is an automated pull request created by the auto-update workflow following up a new Release of CLIc.
             
             **Release Tag:** ${context.payload.client_payload.release_tag}
                         
-            Closes #${issue_number}`,`,
+            Closes #${issue_number}',
                   });
       
             core.setOutput('pr_number', pr.number);
