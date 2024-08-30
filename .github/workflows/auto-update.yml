@@ -15,7 +15,7 @@ jobs:
           echo "Received release tag: ${{ github.event.client_payload.release_tag }} from CLIc"
 
       - name: Access release_tag
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7.0.1
         with:
           script: |
             const releaseTag = context.payload.client_payload?.release_tag;
@@ -23,7 +23,7 @@ jobs:
 
       - name: Check if issues already exists
         id: check-issues
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7.0.1
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
@@ -57,7 +57,7 @@ jobs:
       - name: Create issue
         id: create-issue
         if: steps.check-issues.outputs.issue_number == ''
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7.0.1
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
@@ -87,7 +87,7 @@ jobs:
         if: steps.check-issues.outputs.issue_number != ''
         env:
           issue_number: ${{ steps.check-issues.outputs.issue_number }}
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7.0.1
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
@@ -143,7 +143,7 @@ jobs:
 
       - name: Check if branch exists or create a new one
         id: check-branch
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7.0.1
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
@@ -207,7 +207,7 @@ jobs:
 
       - name: Check if PR already exists
         id: check-pr
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7.0.1
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
@@ -231,7 +231,7 @@ jobs:
       - name: Create a pull request
         id: create-pr
         if: steps.check-pr.outputs.pr_number == ''
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7.0.1
         with:
           github-token: ${{ secrets.RELEASE_PAT }}
           script: |
