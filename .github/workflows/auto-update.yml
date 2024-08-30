@@ -1,8 +1,9 @@
 name: Auto Update
 
 on:
-  repository_dispatch:
-    types: [custom_event]
+  # repository_dispatch:
+  #   types: [clic_update]
+  workflow_dispatch:
 
 jobs:
   handle-issue:
@@ -14,12 +15,12 @@ jobs:
         run: |
           echo "Received release tag: ${{ github.event.client_payload.release_tag }} from CLIc"
 
-      - name: Access release_tag
+      - name: Log release_tag
+        id: log-release-tag
         uses: actions/github-script@v7.0.1
         with:
           script: |
-            const releaseTag = context.payload.client_payload?.release_tag;
-            console.log(`Release Tag: ${releaseTag}`);
+            console.log(`Release Tag: ${context.payload.client_payload?.release_tag}`);
 
       - name: Check if issues already exists
         id: check-issues
@@ -29,11 +30,6 @@ jobs:
           script: |
             (async () => {
               const releaseTag = context.payload.client_payload?.release_tag;
-              if (!releaseTag) {
-                console.log("No release tag found in client payload.");
-                core.setOutput('issue_number', '');
-                return;
-              }
 
               console.log(`Checking if issue already exists for release tag: ${releaseTag}`);
               const { data: issues } = await github.rest.issues.listForRepo({
@@ -44,7 +40,6 @@ jobs:
               });
 
               const issue = issues.find(issue => issue.title === `Auto-Update to version ${releaseTag}`);
-
               if (issue) {
                 console.log("Issue already exists with number: " + issue.number);
                 core.setOutput('issue_number', issue.number);
@@ -54,7 +49,7 @@ jobs:
               }
             })();
 
-      - name: Create issue
+      - name: Create issue if not exists
         id: create-issue
         if: steps.check-issues.outputs.issue_number == ''
         uses: actions/github-script@v7.0.1
@@ -63,6 +58,7 @@ jobs:
           script: |
             (async () => {
               const releaseTag = context.payload.client_payload?.release_tag;
+
               console.log(`Creating new issue for release tag: ${releaseTag}`);
               const { data: issue } = await github.rest.issues.create({
                 owner: context.repo.owner,
@@ -82,7 +78,7 @@ jobs:
               core.setOutput('issue_number', issue.number);
             })();
 
-      - name: Reopen issue
+      - name: Else reopen the issue
         id: reopen-issue
         if: steps.check-issues.outputs.issue_number != ''
         env:
@@ -94,6 +90,7 @@ jobs:
             (async () => {
               const issue_number = process.env.issue_number;
               const releaseTag = context.payload.client_payload?.release_tag;
+
               console.log(`Adding message to existing issue with number: ${issue_number}`);
               const { data: issue } = await github.rest.issues.get({
                 owner: context.repo.owner,
@@ -141,7 +138,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Check if branch exists or create a new one
+      - name: Create branch if not exists
         id: check-branch
         uses: actions/github-script@v7.0.1
         with:
@@ -173,7 +170,7 @@ jobs:
             });
             console.log(branchesAfter.map(branch => branch.name));
             
-      - name: Get GenCLE and update code
+      - name: Update and push pyclesranto code
         id: update-code
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
@@ -205,7 +202,7 @@ jobs:
           fi
         shell: /usr/bin/bash -e {0}
 
-      - name: Check if PR already exists
+      - name: Check if PR exists
         id: check-pr
         uses: actions/github-script@v7.0.1
         with:
@@ -228,7 +225,7 @@ jobs:
               core.setOutput('pr_number', '');
             }
 
-      - name: Create a pull request
+      - name: Create a PR if not
         id: create-pr
         if: steps.check-pr.outputs.pr_number == ''
         uses: actions/github-script@v7.0.1
@@ -251,6 +248,13 @@ jobs:
               **Changelog:** [View Changelog](https://github.com/clEsperanto/CLIc/releases/tag/${releaseTag})
                           
               Closes #${{ needs.handle-issue.outputs.issue_number }}`
+            });
+            
+            await github.rest.pulls.createReviewRequest({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              reviewers: ['StRigaud', 'haesleinhuepf']
             });
       
             console.log(`Created PR with number: ${pr.number}`);
