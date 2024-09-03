@@ -1,0 +1,13 @@
+name: cle-roboto
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  cle-roboto:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: clEsperanto/cle-roboto-repo@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
