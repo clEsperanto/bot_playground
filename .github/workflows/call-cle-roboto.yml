@@ -3,6 +3,16 @@ on:
   issues:
     types:
       - opened
+  repository_dispatch:
+    types:
+      - clic_update
+  workflow_dispatch: # allows manual triggering
+    inputs:
+        release_tag:
+            description: 'Tag to update to'
+            required: true
+            default: 'master'
+
 
 jobs:
   cle-roboto:
