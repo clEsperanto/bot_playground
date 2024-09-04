@@ -18,6 +18,10 @@ jobs:
   cle-roboto:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
       - uses: clEsperanto/cle-roboto-repo@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
